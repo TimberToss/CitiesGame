@@ -15,16 +15,20 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.speechrecognition.adapter.MyAdapter;
 import com.example.speechrecognition.model.CityForRecyclerView;
 import com.example.speechrecognition.databinding.ActivityMainBinding;
+import com.example.speechrecognition.viewmodel.MainActivityViewModel;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -37,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<CityForRecyclerView> currentCities;
     private MyAdapter adapter;
     private LinearLayoutManager layoutManager;
+    private MainActivityViewModel viewModel;
 
 
     @SuppressLint("ClickableViewAccessibility")
@@ -46,6 +51,17 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        viewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication())
+                .create(MainActivityViewModel.class);
+        try {
+            System.out.println("3333");
+            System.out.println(viewModel.getAllCities("russianName"));
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+//        viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
         checkRecordAudioPermission();
         speechRecognizerInit();
         firestoreInit();
@@ -108,10 +124,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void firestoreInit() {
-        firestore = FirebaseFirestore.getInstance();
-        DocumentReference documentReference = firestore
-                .collection("cities")
-                .document("citiesList");
+
+//        firestore = FirebaseFirestore.getInstance();
+//        DocumentReference documentReference = firestore
+//                .collection("cities")
+//                .document("citiesList");
 
 //        documentReference.get().addOnCompleteListener(task -> {
 ////            data = new ArrayList<>();
