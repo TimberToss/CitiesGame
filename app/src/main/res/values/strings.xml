@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SpeechRecognition</string>
+    <string name="speech_text">speech text</string>
+    <string name="user_city">User city</string>
+</resources>
