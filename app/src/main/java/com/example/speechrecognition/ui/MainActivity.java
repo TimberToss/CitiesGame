@@ -51,17 +51,18 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        viewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication())
-                .create(MainActivityViewModel.class);
-        try {
-            System.out.println("3333");
-            System.out.println(viewModel.getAllCities("russianName"));
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-//        viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+//        viewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication())
+//                .create(MainActivityViewModel.class);
+//        try {
+//            System.out.println("3333");
+//            System.out.println(viewModel.getAllCities("russianName"));
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+        viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
+        viewModel.getData();
         checkRecordAudioPermission();
         speechRecognizerInit();
         firestoreInit();
