@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel;
 import com.example.speechrecognition.data.entity.BeginLetters;
 import com.example.speechrecognition.data.entity.City;
 import com.example.speechrecognition.data.repository.Repository;
+import com.example.speechrecognition.data.state.CheckCityStatus;
 import com.example.speechrecognition.data.state.Resource;
 
 import java.util.ArrayList;
@@ -127,19 +128,18 @@ public class MainActivityViewModel extends ViewModel
         return ourCityName;
     }
 
-    public boolean checkUserCity(String userCity) {
+    public CheckCityStatus checkUserCity(String userCity) {
         Character userCityBeginLetter = userCity.toLowerCase().charAt(0);
         if (!possibleBeginLetters.contains(userCityBeginLetter)) {
             Log.d(MY_TAG, "user city has incorrect begin letter");
-            // TODO
-            return false;
+            return CheckCityStatus.INCORRECT_BEGIN_LETTER;
         }
         List<String> citiesNames = citiesMap.get(userCityBeginLetter);
         assert citiesNames != null;
         if (citiesNames.isEmpty()) {
             Log.d(MY_TAG, "cities on this letter are ended: " + userCityBeginLetter);
             // TODO if cities beginning from any letter will end - close game
-            return false;
+            return CheckCityStatus.CITIES_FROM_LETTER_ENDED;
         }
         boolean isUserCityExistInList = false;
         for (int i = 0; i < citiesNames.size(); i++) {
@@ -151,18 +151,21 @@ public class MainActivityViewModel extends ViewModel
                 break;
             }
         }
-//        if (citiesNames.isEmpty()) {
-//            Log.d(MY_TAG, "user enter last word beginning from this letter: " + userCityBeginLetter);
-//            // TODO if cities beginning from any letter will end - close game
-//            return false;
-//        }
-        if (!isUserCityExistInList) {
-            Log.d(MY_TAG, "database doesn't know this city or it is already used: " + userCity);
-            // TODO incorrect cityName (doesn't exist in database or already is used in game)
-            // maybe for check existence in database get query to Firestore
-            return false;
+        if (citiesNames.isEmpty()) {
+            Log.d(MY_TAG, "user enter last word beginning from this letter: " + userCityBeginLetter);
+            // TODO if cities beginning from any letter will end - close game
+            return CheckCityStatus.USER_ENTER_LAST_CITY;
         }
-        return true;
+        if (!isUserCityExistInList) {
+            if (repository.isCityExistInDatabase(userCity, language)) {
+                Log.d(MY_TAG, "city is already used: " + userCity);
+                return CheckCityStatus.ALREADY_USED_CITY;
+            } else {
+                Log.d(MY_TAG, "database doesn't know this city: " + userCity);
+                return CheckCityStatus.UNKNOWN_CITY;
+            }
+        }
+        return CheckCityStatus.SUCCESS;
     }
 
     public MainActivityViewModel() {
@@ -240,19 +243,8 @@ public class MainActivityViewModel extends ViewModel
 
         if (RU_LOCALE.equals(Locale.getDefault().getLanguage())) {
             language = RUSSIAN;
-//            createMap(RUSSIAN);
         } else {
             language = ENGLISH;
-//            createMap(ENGLISH);
         }
     }
-
-//    @Override
-//    public void getQuery(Resource<T> resource) {
-//        if (resource instanceof Resource.Success) {
-//
-//        } else if (resource instanceof Resource.Error) {
-//
-//        }
-//    }
 }

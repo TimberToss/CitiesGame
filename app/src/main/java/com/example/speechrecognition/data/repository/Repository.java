@@ -8,6 +8,7 @@ import com.example.speechrecognition.data.entity.City;
 import com.example.speechrecognition.data.state.Resource;
 import com.example.speechrecognition.viewmodel.ServerCitiesCallback;
 import com.example.speechrecognition.viewmodel.ServerLettersCallback;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -122,6 +123,16 @@ public class Repository {
 //                        runLettersServerQuery(db, language);
 //                    }
                 });
+    }
+
+    public boolean isCityExistInDatabase(String userCityName, String language) {
+        String field = language + "Name";
+        Log.d(MY_TAG, field + " " + userCityName);
+        return FirebaseFirestore.getInstance()
+                .collection(COLLECTION_CITIES)
+                .whereEqualTo(field, userCityName)
+                .get(Source.CACHE)
+                .isSuccessful();
     }
 
     public void getPossibleBeginLetters(String language) {

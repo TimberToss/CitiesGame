@@ -2,8 +2,6 @@ package com.example.speechrecognition.ui;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -11,46 +9,40 @@ import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.example.speechrecognition.R;
 import com.example.speechrecognition.adapter.MyAdapter;
 import com.example.speechrecognition.data.entity.City;
 import com.example.speechrecognition.data.state.Resource;
 import com.example.speechrecognition.model.CityForRecyclerView;
 import com.example.speechrecognition.databinding.ActivityMainBinding;
 import com.example.speechrecognition.viewmodel.MainActivityViewModel;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.concurrent.ExecutionException;
 
 import static com.example.speechrecognition.constants.Constants.MY_TAG;
 
-public class MainActivity extends AppCompatActivity {
-
+public class MainActivity extends AppCompatActivity implements RestartGameCallback{
     public static final int REQUEST_AUDIO_PERMISSION_CODE = 1;
     private ActivityMainBinding binding;
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
-    private FirebaseFirestore firestore;
-    private ArrayList<ArrayList<String>> data;
+    private TextToSpeech textToSpeech;
     private ArrayList<CityForRecyclerView> currentCities;
     private MyAdapter adapter;
     private LinearLayoutManager layoutManager;
@@ -77,25 +69,16 @@ public class MainActivity extends AppCompatActivity {
                 hideProgressBar();
 
             } else if (resource.getStatus() == Resource.DataStatus.LOADING) {
+                showProgressBar();
                 binding.recordButton.setEnabled(false);
                 binding.editText.setEnabled(false);
             }
         });
         viewModel.downloadData();
 
-//        binding.editText.setOnEditorActionListener((v, actionId, event) -> {
-//            if (actionId == EditorInfo.IME_ACTION_DONE) {
-//                hideKeyboard();
-//                // do something, e.g. set your TextView here via .setText()
-////                InputMethodManager imm = (InputMethodManager) v.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-////                imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-//                return true;
-//            }
-//            return false;
-//        });
-
         checkRecordAudioPermission();
         speechRecognizerInit();
+        textToSpeechInit();
         recyclerViewAdapterInit();
 
 
@@ -158,6 +141,23 @@ public class MainActivity extends AppCompatActivity {
         speechRecognizer.setRecognitionListener(createRecognitionListener());
     }
 
+    private void textToSpeechInit() {
+        textToSpeech = new TextToSpeech(this, status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                if (textToSpeech.isLanguageAvailable(new Locale(Locale.getDefault().getLanguage()))
+                        == TextToSpeech.LANG_AVAILABLE) {
+                    textToSpeech.setLanguage(new Locale(Locale.getDefault().getLanguage()));
+                } else {
+                    textToSpeech.setLanguage(Locale.ENGLISH);
+                }
+                textToSpeech.setPitch(1.3f);
+                textToSpeech.setSpeechRate(0.7f);
+            } else if (status == TextToSpeech.ERROR) {
+                Toast.makeText(this, R.string.tts_error, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
     private void recyclerViewAdapterInit() {
         layoutManager = new LinearLayoutManager(this);
 //        layoutManager.scrollToPosition(0);
@@ -165,11 +165,6 @@ public class MainActivity extends AppCompatActivity {
         layoutManager.setStackFromEnd(true);
         binding.recyclerView.setLayoutManager(layoutManager);
         currentCities = new ArrayList<>();
-//        currentCities.add(new City("Абакан", City.CityType.APP_CITY));
-//        currentCities.add(new City("Нибиру", City.CityType.USER_CITY));
-//        currentCities.add(new City("Уругвай", City.CityType.APP_CITY));
-//        currentCities.add(new City("Йорк", City.CityType.USER_CITY));
-//        currentCities.add(new City("Киров", City.CityType.APP_CITY));
         adapter = new MyAdapter(currentCities);
         binding.recyclerView.setAdapter(adapter);
     }
@@ -180,17 +175,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void hideProgressBar() {
         binding.progressBar.setVisibility(View.GONE);
-    }
-
-    public void hideKeyboard() {
-        InputMethodManager imm = (InputMethodManager) this.getSystemService(Activity.INPUT_METHOD_SERVICE);
-        //Find the currently focused view, so we can grab the correct window token from it.
-        View view = this.getCurrentFocus();
-        //If no view currently has focus, create a new one, just so we can grab a window token from it
-        if (view == null) {
-            view = new View(this);
-        }
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     private RecognitionListener createRecognitionListener() {
@@ -225,17 +209,48 @@ public class MainActivity extends AppCompatActivity {
                 if (matches != null) {
                     String result = matches.get(0);
                     binding.speechText.setText(result);
-                    currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
                     adapter.notifyDataSetChanged();
                     binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
                     Log.d(MY_TAG, "before check");
-                    if (viewModel.checkUserCity(result)) {
-                        String ourCity = viewModel.createAnswer(result);
-                        binding.speechText.setText(ourCity);
-                        currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
-                        adapter.notifyDataSetChanged();
-                        binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+
+                    switch (viewModel.checkUserCity(result)) {
+                        case SUCCESS:
+                            String ourCity = viewModel.createAnswer(result);
+                            textToSpeech.speak(ourCity,TextToSpeech.QUEUE_FLUSH, null, Long.toString(this.hashCode()));
+                            binding.speechText.setText(ourCity);
+                            currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
+                            currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
+                            adapter.notifyDataSetChanged();
+                            binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+                            break;
+                        case INCORRECT_BEGIN_LETTER:
+                            outputErrorToUser(R.string.incorrect_begin_letters);
+                            break;
+                        case CITIES_FROM_LETTER_ENDED:
+                            outputErrorToUser(R.string.cities_from_letter_ended);
+                            RestartGameDialog dialog = new RestartGameDialog(getActivity());
+                            dialog.show(getSupportFragmentManager(), "restart dialog");
+                            break;
+                        case USER_ENTER_LAST_CITY:
+                            outputErrorToUser(R.string.user_enter_last_city);
+                            RestartGameDialog restartGameDialog = new RestartGameDialog(getActivity());
+                            restartGameDialog.show(getSupportFragmentManager(), "restart dialog");
+                            break;
+                        case ALREADY_USED_CITY:
+                            outputErrorToUser(R.string.already_used_city);
+                            break;
+                        case UNKNOWN_CITY:
+                            outputErrorToUser(R.string.unknown_city);
+                            break;
                     }
+//                    if (viewModel.checkUserCity(result)) {
+//                        String ourCity = viewModel.createAnswer(result);
+//                        binding.speechText.setText(ourCity);
+//                        currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
+//                        currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
+//                        adapter.notifyDataSetChanged();
+//                        binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+//                    }
                 }
             }
 
@@ -247,5 +262,29 @@ public class MainActivity extends AppCompatActivity {
             public void onEvent(int eventType, Bundle params) {
             }
         };
+    }
+
+    private MainActivity getActivity() {
+        return this;
+    }
+
+    private void outputErrorToUser(int id) {
+        currentCities.add(new CityForRecyclerView(
+                getResources().getText(id).toString(),
+                CityForRecyclerView.CityType.USER_CITY));
+    }
+
+    @Override
+    public void restartGame() {
+        currentCities.clear();
+        adapter.notifyDataSetChanged();
+        viewModel.downloadData();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        speechRecognizer.destroy();
+        textToSpeech.shutdown();
     }
 }
