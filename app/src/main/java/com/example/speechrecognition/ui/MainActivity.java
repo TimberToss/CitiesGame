@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
         checkRecordAudioPermission();
         speechRecognizerInit();
-//        recyclerViewAdapterInit();
+        recyclerViewAdapterInit();
 
 
         binding.recordButton.setOnTouchListener((view, motionEvent) -> {
@@ -219,10 +219,19 @@ public class MainActivity extends AppCompatActivity {
             public void onResults(Bundle results) {
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null) {
-                    binding.speechText.setText(matches.get(0));
-                    currentCities.add(new CityForRecyclerView(matches.get(0), CityForRecyclerView.CityType.USER_CITY));
+                    String result = matches.get(0);
+                    binding.speechText.setText(result);
+                    currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
                     adapter.notifyDataSetChanged();
                     binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+                    Log.d(MY_TAG, "before check");
+                    if (viewModel.checkUserCity(result)) {
+                        String ourCity = viewModel.createAnswer(result);
+                        binding.speechText.setText(ourCity);
+                        currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
+                        adapter.notifyDataSetChanged();
+                        binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+                    }
                 }
             }
 
