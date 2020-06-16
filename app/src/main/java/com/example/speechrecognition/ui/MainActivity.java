@@ -45,11 +45,7 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
     private TextToSpeech textToSpeech;
     private ArrayList<CityForRecyclerView> currentCities;
     private MyAdapter adapter;
-    private LinearLayoutManager layoutManager;
     private MainActivityViewModel viewModel;
-
-    private LiveData<Resource<City>> citiesLiveData;
-    private LiveData<Resource<String>> lettersLiveData;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -63,7 +59,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
             if (resource.getStatus() == Resource.DataStatus.SUCCESS) {
                 hideProgressBar();
                 binding.recordButton.setEnabled(true);
-                binding.editText.setEnabled(true);
 
             } else if (resource.getStatus() == Resource.DataStatus.ERROR) {
                 hideProgressBar();
@@ -71,7 +66,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
             } else if (resource.getStatus() == Resource.DataStatus.LOADING) {
                 showProgressBar();
                 binding.recordButton.setEnabled(false);
-                binding.editText.setEnabled(false);
             }
         });
         viewModel.downloadData();
@@ -87,11 +81,13 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
 
                 case MotionEvent.ACTION_UP:
                     speechRecognizer.stopListening();
-                    binding.speechText.setHint("You will see text here");
+                    binding.speechText.setHint(
+                            getResources().getText(R.string.speak).toString());
                     break;
 
                 case MotionEvent.ACTION_DOWN:
-                    binding.speechText.setHint("Listening...");
+                    binding.speechText.setHint(
+                            getResources().getText(R.string.listening).toString());
                     speechRecognizer.startListening(speechRecognizerIntent);
                     break;
             }
@@ -159,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
     }
 
     private void recyclerViewAdapterInit() {
-        layoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
 //        layoutManager.scrollToPosition(0);
 //        layoutManager.setReverseLayout(true);
         layoutManager.setStackFromEnd(true);
@@ -208,7 +204,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null) {
                     String result = matches.get(0);
-                    binding.speechText.setText(result);
                     adapter.notifyDataSetChanged();
                     binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
                     Log.d(MY_TAG, "before check");
@@ -217,7 +212,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
                         case SUCCESS:
                             String ourCity = viewModel.createAnswer(result);
                             textToSpeech.speak(ourCity,TextToSpeech.QUEUE_FLUSH, null, Long.toString(this.hashCode()));
-                            binding.speechText.setText(ourCity);
                             currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
                             currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
                             adapter.notifyDataSetChanged();
@@ -227,13 +221,13 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
                             outputErrorToUser(R.string.incorrect_begin_letters);
                             break;
                         case CITIES_FROM_LETTER_ENDED:
-                            outputErrorToUser(R.string.cities_from_letter_ended);
-                            RestartGameDialog dialog = new RestartGameDialog(getActivity());
+                            RestartGameDialog dialog = new RestartGameDialog(
+                                    getActivity(), R.string.cities_from_letter_ended);
                             dialog.show(getSupportFragmentManager(), "restart dialog");
                             break;
                         case USER_ENTER_LAST_CITY:
-                            outputErrorToUser(R.string.user_enter_last_city);
-                            RestartGameDialog restartGameDialog = new RestartGameDialog(getActivity());
+                            RestartGameDialog restartGameDialog = new RestartGameDialog(
+                                    getActivity(), R.string.user_enter_last_city);
                             restartGameDialog.show(getSupportFragmentManager(), "restart dialog");
                             break;
                         case ALREADY_USED_CITY:

@@ -26,14 +26,9 @@ public class Repository {
 
     private static final String COLLECTION_CITIES = "cities";
     private static final String COLLECTION_BEGIN_LETTERS = "possible_begin_letters";
-    private static final String LETTERS_ARRAY = "letters";
     //    private CityDao cityDao;
     private ServerCitiesCallback<List<City>> citiesCallback;
     private ServerLettersCallback<BeginLetters> lettersCallback;
-
-    public Repository() {
-    }
-
 
     public Repository(ServerCitiesCallback<List<City>> citiesCallback,
                       ServerLettersCallback<BeginLetters> lettersCallback) {

@@ -13,9 +13,11 @@ import androidx.fragment.app.DialogFragment;
 public class RestartGameDialog extends DialogFragment {
 
     private RestartGameCallback callback;
+    private int messageId;
 
-    public RestartGameDialog(RestartGameCallback callback) {
+    public RestartGameDialog(RestartGameCallback callback, int messageId) {
         this.callback = callback;
+        this.messageId = messageId;
     }
 
     @NonNull
@@ -39,7 +41,7 @@ public class RestartGameDialog extends DialogFragment {
 //                .show();
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("End of the game")
-                .setMessage("Are you want to restart game?")
+                .setMessage(getResources().getText(messageId).toString())
                 .setPositiveButton("Ok", (dialog, which) -> callback.restartGame());
         return builder.create();
     }
