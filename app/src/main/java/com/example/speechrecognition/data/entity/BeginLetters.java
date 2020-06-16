@@ -1,14 +1,16 @@
 package com.example.speechrecognition.data.entity;
 
+import java.util.List;
+
 public class BeginLetters {
 
-    private String[] lettersArray;
+    private List<String> letters;
 
-    public String[] getLettersArray() {
-        return lettersArray;
+    public List<String> getLetters() {
+        return letters;
     }
 
-    public void setLettersArray(String[] lettersArray) {
-        this.lettersArray = lettersArray;
+    public void setLetters(List<String> letters) {
+        this.letters = letters;
     }
 }
