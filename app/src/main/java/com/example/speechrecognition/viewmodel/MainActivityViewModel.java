@@ -15,14 +15,10 @@ import com.example.speechrecognition.data.state.Resource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import static com.example.speechrecognition.constants.Constants.ENGLISH;
 import static com.example.speechrecognition.constants.Constants.MY_TAG;
-import static com.example.speechrecognition.constants.Constants.RUSSIAN;
-import static com.example.speechrecognition.constants.Constants.RU_LOCALE;
 
 public class MainActivityViewModel extends ViewModel
         implements ServerCitiesCallback<List<City>>, ServerLettersCallback<BeginLetters> {
@@ -30,28 +26,28 @@ public class MainActivityViewModel extends ViewModel
     private Repository repository;
     private List<City> cities;
     private List<Character> possibleBeginLetters;
-    private String language;
     private Map<Character, List<String>> citiesMap;
-
-    private MutableLiveData<Resource<List<City>>> citiesMutableLiveData
-            = new MutableLiveData<>(new Resource.Loading<>());
-    public LiveData<Resource<List<City>>> citiesLiveData = citiesMutableLiveData;
 
     private MutableLiveData<Resource<BeginLetters>> lettersMutableLiveData
             = new MutableLiveData<>(new Resource.Loading<>());
     public LiveData<Resource<BeginLetters>> lettersLiveData = lettersMutableLiveData;
 
+    public MainActivityViewModel() {
+        super();
+        repository = new Repository(this, this);
+    }
+
+    public void downloadData() {
+        Log.d(MY_TAG, "start download data");
+        repository.downloadData();
+    }
+
     @Override
     public void downloadCities(Resource<List<City>> resource) {
-        citiesMutableLiveData.setValue(resource);
         Log.d(MY_TAG, "Download cities");
         if (resource.getStatus() == Resource.DataStatus.SUCCESS) {
             cities = resource.getData();
-            knowLanguage();
-            repository.downloadPossibleLetters(language);
-            for (City city : cities) {
-                Log.d(MY_TAG, city.getEnglishName());
-            }
+            repository.downloadPossibleLetters();
         } else if (resource.getStatus() == Resource.DataStatus.ERROR) {
             Log.d(MY_TAG, resource.getMessage());
         }
@@ -75,9 +71,6 @@ public class MainActivityViewModel extends ViewModel
         for (String str : letters) {
             possibleBeginLetters.add(str.charAt(0));
         }
-        for (Character letter : possibleBeginLetters) {
-            Log.d(MY_TAG, letter.toString());
-        }
     }
 
     private void createCitiesMap() {
@@ -86,22 +79,18 @@ public class MainActivityViewModel extends ViewModel
             citiesMap.put(character, new ArrayList<>());
         }
         for (City city : cities) {
-            if (city.isNameOnThisLanguageExist(language)) {
-                String cityName = city.getName(language);
+            String cityName = city.getRussianName();
 
-                List<String> citiesNames = citiesMap.get(cityName.toLowerCase().charAt(0));
-                if (citiesNames == null) {
-                    Log.d(MY_TAG, "Incorrect begin letter: " + cityName.charAt(0));
-                    return;
-                }
-                citiesNames.add(cityName);
-                Log.d("Check cities", cityName);
+            List<String> citiesNames = citiesMap.get(cityName.toLowerCase().charAt(0));
+            if (citiesNames == null) {
+                Log.d(MY_TAG, "Incorrect begin letter: " + cityName.charAt(0));
+                return;
             }
+            citiesNames.add(cityName);
         }
     }
 
     public String createAnswer(String userWord) {
-//        Character ourBeginLetter = userWord.toLowerCase().charAt(userWord.length() - 1);
         Character ourBeginLetter = null;
         char[] lettersInUserCity = userWord.toCharArray();
 
@@ -111,53 +100,61 @@ public class MainActivityViewModel extends ViewModel
                 break;
             }
         }
-        // this check is redundant because in checkUserCity() throw exception if userCity begin from incorrect word
-//        if (ourBeginLetter == null) {
-//            Log.d(MY_TAG, "User word consists from forbidden letters");
-//            // TODO please, enter another word
-//        }
         List<String> citiesNames = citiesMap.get(ourBeginLetter);
         assert citiesNames != null;
-//        if (citiesNames.isEmpty()) {
-//            // TODO if cities beginning from any letter will end - close game
-//        }
-
         int indexOurCity = new Random().nextInt(citiesNames.size());
         String ourCityName = citiesNames.get(indexOurCity);
         citiesNames.remove(indexOurCity);
         return ourCityName;
     }
 
-    public CheckCityStatus checkUserCity(String userCity) {
+    public CheckCityStatus checkUserCity(String userCity, String lastAppCity) {
         Character userCityBeginLetter = userCity.toLowerCase().charAt(0);
         if (!possibleBeginLetters.contains(userCityBeginLetter)) {
             Log.d(MY_TAG, "user city has incorrect begin letter");
             return CheckCityStatus.INCORRECT_BEGIN_LETTER;
         }
+
+        if (lastAppCity != null) {
+            lastAppCity = lastAppCity.toLowerCase();
+            Character appEndLetter = null;
+            for (int i = lastAppCity.length() - 1; i >= 0; i--) {
+                if (possibleBeginLetters.contains(lastAppCity.charAt(i))) {
+                    appEndLetter = lastAppCity.charAt(i);
+                    break;
+                }
+            }
+
+            if (appEndLetter == null || !userCityBeginLetter.toString().equals(appEndLetter.toString())) {
+                Log.d(MY_TAG, "user choose incorrect begin letter: "
+                        + userCityBeginLetter + " " + appEndLetter);
+                return CheckCityStatus.CHOOSE_INCORRECT_BEGIN_LETTER;
+            }
+        }
+
         List<String> citiesNames = citiesMap.get(userCityBeginLetter);
         assert citiesNames != null;
         if (citiesNames.isEmpty()) {
             Log.d(MY_TAG, "cities on this letter are ended: " + userCityBeginLetter);
-            // TODO if cities beginning from any letter will end - close game
             return CheckCityStatus.CITIES_FROM_LETTER_ENDED;
         }
+
         boolean isUserCityExistInList = false;
         for (int i = 0; i < citiesNames.size(); i++) {
-            Log.d(MY_TAG, userCity);
-            Log.d(MY_TAG, citiesNames.get(i));
             if (userCity.toLowerCase().equals(citiesNames.get(i).toLowerCase())) {
                 isUserCityExistInList = true;
                 citiesNames.remove(i);
                 break;
             }
         }
+
         if (citiesNames.isEmpty()) {
             Log.d(MY_TAG, "user enter last word beginning from this letter: " + userCityBeginLetter);
-            // TODO if cities beginning from any letter will end - close game
             return CheckCityStatus.USER_ENTER_LAST_CITY;
         }
+
         if (!isUserCityExistInList) {
-            if (repository.isCityExistInDatabase(userCity, language)) {
+            if (repository.isCityExistInDatabase(userCity)) {
                 Log.d(MY_TAG, "city is already used: " + userCity);
                 return CheckCityStatus.ALREADY_USED_CITY;
             } else {
@@ -166,85 +163,5 @@ public class MainActivityViewModel extends ViewModel
             }
         }
         return CheckCityStatus.SUCCESS;
-    }
-
-    public MainActivityViewModel() {
-        super();
-        repository = new Repository(this, this);
-
-//        try {
-//            cities = repository.getData();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//
-//        chooseLanguage();
-    }
-
-    public void downloadData() {
-//        try {
-//            cities = repository.getData();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        cities = repository.getData();
-        repository.downloadData();
-//        chooseLanguage();
-    }
-
-//    public List<City> getAllCities(String concreteLanguage) throws ExecutionException, InterruptedException {
-//        return repository.getAllCities(concreteLanguage);
-//    }
-
-    private void createMap(String language) {
-
-        char[] possibleBeginLetters;
-//        try {
-//            possibleBeginLetters = repository.getPossibleBeginLetters(language);
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-
-//        possibleBeginLetters = repository.getPossibleBeginLetters(language);
-        repository.getPossibleBeginLetters(language);
-
-        Map<Character, List<String>> cityMap = new HashMap<>();
-
-//        if (possibleBeginLetters == null) {
-//            Log.d(MY_TAG, "possibleBeginLetters is Null");
-//            return;
-//        }
-//        for (Character character : possibleBeginLetters) {
-//            cityMap.put(character, new ArrayList<>());
-//        }
-//
-//        for (City city : cities) {
-//            if (city.isNameOnThisLanguageExist(language)) {
-//                String cityName = city.getName(language);
-//
-//                List<String> list = cityMap.get(cityName.charAt(0));
-//                if (list == null) {
-//                    Log.d(MY_TAG, "Incorrect begin letter");
-//                    return;
-//                }
-//                list.add(cityName);
-//                Log.d("Check cities", cityName);
-//            }
-//        }
-    }
-
-    private void knowLanguage() {
-
-        if (RU_LOCALE.equals(Locale.getDefault().getLanguage())) {
-            language = RUSSIAN;
-        } else {
-            language = ENGLISH;
-        }
     }
 }

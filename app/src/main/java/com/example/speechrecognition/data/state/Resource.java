@@ -1,17 +1,5 @@
 package com.example.speechrecognition.data.state;
 
-import com.example.speechrecognition.R;
-
-import java.util.List;
-
-//sealed class Resource<T>(
-//        val data: T? = null,
-//        val message: String? = null
-//        ) {
-//class Success<T>(data: T) : Resource<T>(data)
-//class Loading<T>(data: T? = null) : Resource<T>(data)
-//class Error<T>(message: String, data: T? = null) : Resource<T>(data, message)
-//        }
 
 public class Resource <T> {
     private DataStatus status;

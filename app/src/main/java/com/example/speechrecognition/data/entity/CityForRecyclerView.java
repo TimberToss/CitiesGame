@@ -1,4 +1,4 @@
-package com.example.speechrecognition.model;
+package com.example.speechrecognition.data.entity;
 
 public class CityForRecyclerView {
 

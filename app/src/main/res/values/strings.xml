@@ -1,26 +1,25 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">SpeechRecognition</string>
-    <string name="speech_text">speech text</string>
-    <string name="user_city">User city</string>
-    <string name="tts_error">Error in text-to-speech</string>
+    <string name="note">
+        Напоминание: в игре участвуют только русские города, при этом отстуствуют города на буквы Й,Ц
+    </string>
+    <string name="tts_error">Ошибка в text-to-speech</string>
     <string name="incorrect_begin_letters">
-        Application does not support\n
-        cities starting with this letter\n
-        Please say another word
+        Приложение не поддерживает\nгорода, начинающиеся с этой буквы\nПожалуйста, назовите другой город
+    </string>
+    <string name="choose_incorrect_begin_letters">
+        Вы назвали город, начинающийся\nс неправильной буквы\nПожалуйста, назовите другой город
     </string>
     <string name="cities_from_letter_ended">
-        Because cities from this letter\n
-        is ended, You won!!!\n
-        Are you want to restart game?
+        Так как города, начинающиеся\nс этой буквы закончились,\nто Вы победили!!!\nХотите начать заново?
     </string>
     <string name="user_enter_last_city">
-        Because you are say last city\n
-        starting from this letter,\n
-        You won!!!\n
-        Are you want to restart game?
+        Так как Вы назвали последний\nгород начинающиеся с этой буквы,\nто Вы победили!!!\nХотите начать заново?
     </string>
-    <string name="already_used_city">This city has already been called</string>
-    <string name="unknown_city">Application does not know this city</string>
-    <string name="listening" tools:ignore="TypographyEllipsis">Listening...</string>
-    <string name="speak">You can speak</string>
+    <string name="already_used_city">Этот город уже называли</string>
+    <string name="unknown_city">Приложение не знает такого города</string>
+    <string name="listening" tools:ignore="TypographyEllipsis">Слушаем...</string>
+    <string name="speak">Вы можете говорить</string>
+    <string name="ok">Ок</string>
+    <string name="end_of_game">Конец игры</string>
 </resources>

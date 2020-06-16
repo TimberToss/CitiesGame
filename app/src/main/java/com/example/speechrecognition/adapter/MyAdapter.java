@@ -5,7 +5,7 @@ import android.view.LayoutInflater;
 import com.example.speechrecognition.adapter.viewholder.AppViewHolder;
 import com.example.speechrecognition.adapter.viewholder.UserViewHolder;
 import com.example.speechrecognition.base.MyViewHolder;
-import com.example.speechrecognition.model.CityForRecyclerView;
+import com.example.speechrecognition.data.entity.CityForRecyclerView;
 import com.example.speechrecognition.databinding.AppViewHolderBinding;
 import com.example.speechrecognition.databinding.UserViewHolderBinding;
 

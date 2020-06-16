@@ -16,20 +16,17 @@ import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.speechrecognition.R;
 import com.example.speechrecognition.adapter.MyAdapter;
-import com.example.speechrecognition.data.entity.City;
 import com.example.speechrecognition.data.state.Resource;
-import com.example.speechrecognition.model.CityForRecyclerView;
 import com.example.speechrecognition.databinding.ActivityMainBinding;
+import com.example.speechrecognition.data.entity.CityForRecyclerView;
 import com.example.speechrecognition.viewmodel.MainActivityViewModel;
 
 import java.util.ArrayList;
@@ -37,7 +34,7 @@ import java.util.Locale;
 
 import static com.example.speechrecognition.constants.Constants.MY_TAG;
 
-public class MainActivity extends AppCompatActivity implements RestartGameCallback{
+public class MainActivity extends AppCompatActivity implements RestartGameCallback {
     public static final int REQUEST_AUDIO_PERMISSION_CODE = 1;
     private ActivityMainBinding binding;
     private SpeechRecognizer speechRecognizer;
@@ -46,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
     private ArrayList<CityForRecyclerView> currentCities;
     private MyAdapter adapter;
     private MainActivityViewModel viewModel;
+    private String lastAppCity = null;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -53,6 +51,8 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        checkRecordAudioPermission();
 
         viewModel = new ViewModelProvider(this).get(MainActivityViewModel.class);
         viewModel.lettersLiveData.observe(this, resource -> {
@@ -69,8 +69,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
             }
         });
         viewModel.downloadData();
-
-        checkRecordAudioPermission();
         speechRecognizerInit();
         textToSpeechInit();
         recyclerViewAdapterInit();
@@ -109,30 +107,19 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_AUDIO_PERMISSION_CODE && grantResults.length == 1) {
-            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                finish();
-            }
-            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        }
-    }
-
     private void speechRecognizerInit() {
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-
         speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
 
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE,
+                Locale.getDefault().getLanguage());
+
         // add these two rows because otherwise onResults invokes twice
         speechRecognizerIntent.putExtra("android.speech.extra.DICTATION_MODE", true);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
-
-        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().getLanguage());
 
         speechRecognizer.setRecognitionListener(createRecognitionListener());
     }
@@ -156,8 +143,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
 
     private void recyclerViewAdapterInit() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-//        layoutManager.scrollToPosition(0);
-//        layoutManager.setReverseLayout(true);
         layoutManager.setStackFromEnd(true);
         binding.recyclerView.setLayoutManager(layoutManager);
         currentCities = new ArrayList<>();
@@ -171,6 +156,36 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
 
     private void hideProgressBar() {
         binding.progressBar.setVisibility(View.GONE);
+    }
+
+    private MainActivity getActivity() {
+        return this;
+    }
+
+    private void outputErrorToUser(int id) {
+        currentCities.add(new CityForRecyclerView(getResources().getText(id).toString(),
+                CityForRecyclerView.CityType.USER_CITY));
+        adapter.notifyDataSetChanged();
+        binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
+    }
+
+    @Override
+    public void restartGame() {
+        lastAppCity = null;
+        currentCities.clear();
+        adapter.notifyDataSetChanged();
+        viewModel.downloadData();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_AUDIO_PERMISSION_CODE && grantResults.length == 1) {
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                finish();
+            }
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     private RecognitionListener createRecognitionListener() {
@@ -208,43 +223,52 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
                     binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
                     Log.d(MY_TAG, "before check");
 
-                    switch (viewModel.checkUserCity(result)) {
+                    switch (viewModel.checkUserCity(result, lastAppCity)) {
+
                         case SUCCESS:
-                            String ourCity = viewModel.createAnswer(result);
-                            textToSpeech.speak(ourCity,TextToSpeech.QUEUE_FLUSH, null, Long.toString(this.hashCode()));
-                            currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
-                            currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
+                            lastAppCity = viewModel.createAnswer(result);
+
+                            textToSpeech.speak(lastAppCity, TextToSpeech.QUEUE_FLUSH,
+                                    null, Long.toString(this.hashCode()));
+
+                            currentCities.add(new CityForRecyclerView(result,
+                                    CityForRecyclerView.CityType.USER_CITY));
+
+                            currentCities.add(new CityForRecyclerView(lastAppCity,
+                                    CityForRecyclerView.CityType.APP_CITY));
+
                             adapter.notifyDataSetChanged();
                             binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
                             break;
+
                         case INCORRECT_BEGIN_LETTER:
                             outputErrorToUser(R.string.incorrect_begin_letters);
                             break;
+
+                        case CHOOSE_INCORRECT_BEGIN_LETTER:
+                            outputErrorToUser(R.string.choose_incorrect_begin_letters);
+                            break;
+
                         case CITIES_FROM_LETTER_ENDED:
                             RestartGameDialog dialog = new RestartGameDialog(
                                     getActivity(), R.string.cities_from_letter_ended);
                             dialog.show(getSupportFragmentManager(), "restart dialog");
                             break;
+
                         case USER_ENTER_LAST_CITY:
                             RestartGameDialog restartGameDialog = new RestartGameDialog(
                                     getActivity(), R.string.user_enter_last_city);
                             restartGameDialog.show(getSupportFragmentManager(), "restart dialog");
                             break;
+
                         case ALREADY_USED_CITY:
                             outputErrorToUser(R.string.already_used_city);
                             break;
+
                         case UNKNOWN_CITY:
                             outputErrorToUser(R.string.unknown_city);
                             break;
                     }
-//                    if (viewModel.checkUserCity(result)) {
-//                        String ourCity = viewModel.createAnswer(result);
-//                        binding.speechText.setText(ourCity);
-//                        currentCities.add(new CityForRecyclerView(result, CityForRecyclerView.CityType.USER_CITY));
-//                        currentCities.add(new CityForRecyclerView(ourCity, CityForRecyclerView.CityType.APP_CITY));
-//                        adapter.notifyDataSetChanged();
-//                        binding.recyclerView.smoothScrollToPosition(adapter.getItemCount());
-//                    }
                 }
             }
 
@@ -256,23 +280,6 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
             public void onEvent(int eventType, Bundle params) {
             }
         };
-    }
-
-    private MainActivity getActivity() {
-        return this;
-    }
-
-    private void outputErrorToUser(int id) {
-        currentCities.add(new CityForRecyclerView(
-                getResources().getText(id).toString(),
-                CityForRecyclerView.CityType.USER_CITY));
-    }
-
-    @Override
-    public void restartGame() {
-        currentCities.clear();
-        adapter.notifyDataSetChanged();
-        viewModel.downloadData();
     }
 
     @Override
