@@ -1,0 +1,25 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">SpeechRecognition</string>
+    <string name="note">
+        Напоминание: в игре участвуют только русские города, при этом отстуствуют города на буквы Й,Ц
+    </string>
+    <string name="tts_error">Ошибка в text-to-speech</string>
+    <string name="incorrect_begin_letters">
+        Приложение не поддерживает города, начинающиеся с этой буквы. Пожалуйста, назовите другой город
+    </string>
+    <string name="choose_incorrect_begin_letters">
+        Вы назвали город, начинающийся с неправильной буквы. Пожалуйста, назовите другой город
+    </string>
+    <string name="cities_from_letter_ended">
+        Так как города, начинающиеся с этой буквы закончились, то Вы победили!!! Хотите начать заново?
+    </string>
+    <string name="user_enter_last_city">
+        Так как Вы назвали последний город начинающиеся с этой буквы, то Вы победили!!! Хотите начать заново?
+    </string>
+    <string name="already_used_city">Этот город уже называли</string>
+    <string name="unknown_city">Приложение не знает такого города</string>
+    <string name="listening" tools:ignore="TypographyEllipsis">Слушаем...</string>
+    <string name="speak">Вы можете говорить</string>
+    <string name="ok">Ок</string>
+    <string name="end_of_game">Конец игры</string>
+</resources>
