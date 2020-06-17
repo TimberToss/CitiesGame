@@ -37,7 +37,6 @@ import static com.example.speechrecognition.constants.Constants.MY_TAG;
 public class MainActivity extends AppCompatActivity implements RestartGameCallback {
     public static final int REQUEST_AUDIO_PERMISSION_CODE = 1;
     private static final String DIALOG_TAG = "restart dialog";
-    private static final String DICTATION_MODE = "\"android.speech.extra.DICTATION_MODE\"";
     private ActivityMainBinding binding;
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
@@ -120,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements RestartGameCallba
                 Locale.getDefault().getLanguage());
 
         // add these two rows because otherwise onResults invokes twice
-        speechRecognizerIntent.putExtra(DICTATION_MODE, true);
+        speechRecognizerIntent.putExtra("android.speech.extra.DICTATION_MODE", true);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
 
         speechRecognizer.setRecognitionListener(createRecognitionListener());
