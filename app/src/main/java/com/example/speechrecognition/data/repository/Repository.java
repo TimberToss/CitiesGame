@@ -41,13 +41,11 @@ public class Repository {
                 .addOnCompleteListener(task -> {
                     if (task.getResult() != null && !task.getResult().isEmpty()) {
                         if (task.isSuccessful()) {
-                            Log.d(MY_TAG, "cities cache task is successful!!!");
                             citiesCallback.downloadCities(
                                     new Resource.Success<>(
                                             task.getResult().toObjects(City.class)
                                     ));
                         } else {
-                            Log.d(MY_TAG, "cities cache task is empty");
                             citiesCallback.downloadCities(
                                     new Resource.Error<>(Objects.requireNonNull(
                                             task.getException()).getMessage()
@@ -67,7 +65,6 @@ public class Repository {
                 .get(Source.CACHE)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Log.d(MY_TAG, "begin letters cache task is successful!!!");
                         lettersCallback.downloadLetters(
                                 new Resource.Success<>(Objects.requireNonNull(task.getResult())
                                         .toObject(BeginLetters.class))
@@ -79,7 +76,6 @@ public class Repository {
     }
 
     public boolean isCityExistInDatabase(String userCityName) {
-        Log.d(MY_TAG, CITY_NAME_FIELD + " " + userCityName);
         Task<QuerySnapshot> task = FirebaseFirestore.getInstance()
                 .collection(COLLECTION_CITIES)
                 .limit(1)
@@ -93,14 +89,10 @@ public class Repository {
     private void runCitiesServerQuery(FirebaseFirestore db) {
         db.collection(COLLECTION_CITIES)
                 .get(Source.SERVER)
-                .addOnSuccessListener(result -> {
-                    Log.d(MY_TAG, "cities server task is successful!!!");
-                    citiesCallback.downloadCities(new Resource.Success<>(result.toObjects(City.class)));
-                })
-                .addOnFailureListener(error -> {
-                    Log.d(MY_TAG, "cities server task is error!!!");
-                    citiesCallback.downloadCities(new Resource.Error<>(error.getMessage()));
-                });
+                .addOnSuccessListener(result ->
+                        citiesCallback.downloadCities(new Resource.Success<>(result.toObjects(City.class))))
+                .addOnFailureListener(error ->
+                        citiesCallback.downloadCities(new Resource.Error<>(error.getMessage())));
     }
 
     private void runLettersServerQuery(FirebaseFirestore db) {
@@ -108,13 +100,11 @@ public class Repository {
                 .document(DOCUMENT_BEGIN_LETTERS_LANGUAGE)
                 .get(Source.SERVER)
                 .addOnSuccessListener(result -> {
-                    Log.d(MY_TAG, "begin letters server task is successful!!!");
                     lettersCallback.downloadLetters(
                             new Resource.Success<>(result.toObject(BeginLetters.class))
                     );
                 })
                 .addOnFailureListener(error -> {
-                    Log.d(MY_TAG, "begin letters server task is error!!!");
                     lettersCallback.downloadLetters(new Resource.Error<>(error.getMessage()));
                 });
     }

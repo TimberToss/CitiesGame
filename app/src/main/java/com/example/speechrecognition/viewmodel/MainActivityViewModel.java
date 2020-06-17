@@ -38,13 +38,11 @@ public class MainActivityViewModel extends ViewModel
     }
 
     public void downloadData() {
-        Log.d(MY_TAG, "start download data");
         repository.downloadData();
     }
 
     @Override
     public void downloadCities(Resource<List<City>> resource) {
-        Log.d(MY_TAG, "Download cities");
         if (resource.getStatus() == Resource.DataStatus.SUCCESS) {
             cities = resource.getData();
             repository.downloadPossibleLetters();
@@ -56,7 +54,6 @@ public class MainActivityViewModel extends ViewModel
     @Override
     public void downloadLetters(Resource<BeginLetters> resource) {
         lettersMutableLiveData.setValue(resource);
-        Log.d(MY_TAG, "Download letters");
         if (resource.getStatus() == Resource.DataStatus.SUCCESS) {
             createPossibleLetters(resource);
             createCitiesMap();
@@ -83,7 +80,6 @@ public class MainActivityViewModel extends ViewModel
 
             List<String> citiesNames = citiesMap.get(cityName.toLowerCase().charAt(0));
             if (citiesNames == null) {
-                Log.d(MY_TAG, "Incorrect begin letter: " + cityName.charAt(0));
                 return;
             }
             citiesNames.add(cityName);
@@ -111,7 +107,6 @@ public class MainActivityViewModel extends ViewModel
     public CheckCityStatus checkUserCity(String userCity, String lastAppCity) {
         Character userCityBeginLetter = userCity.toLowerCase().charAt(0);
         if (!possibleBeginLetters.contains(userCityBeginLetter)) {
-            Log.d(MY_TAG, "user city has incorrect begin letter");
             return CheckCityStatus.INCORRECT_BEGIN_LETTER;
         }
 
@@ -126,8 +121,6 @@ public class MainActivityViewModel extends ViewModel
             }
 
             if (appEndLetter == null || !userCityBeginLetter.toString().equals(appEndLetter.toString())) {
-                Log.d(MY_TAG, "user choose incorrect begin letter: "
-                        + userCityBeginLetter + " " + appEndLetter);
                 return CheckCityStatus.CHOOSE_INCORRECT_BEGIN_LETTER;
             }
         }
@@ -135,7 +128,6 @@ public class MainActivityViewModel extends ViewModel
         List<String> citiesNames = citiesMap.get(userCityBeginLetter);
         assert citiesNames != null;
         if (citiesNames.isEmpty()) {
-            Log.d(MY_TAG, "cities on this letter are ended: " + userCityBeginLetter);
             return CheckCityStatus.CITIES_FROM_LETTER_ENDED;
         }
 
@@ -149,16 +141,13 @@ public class MainActivityViewModel extends ViewModel
         }
 
         if (citiesNames.isEmpty()) {
-            Log.d(MY_TAG, "user enter last word beginning from this letter: " + userCityBeginLetter);
             return CheckCityStatus.USER_ENTER_LAST_CITY;
         }
 
         if (!isUserCityExistInList) {
             if (repository.isCityExistInDatabase(userCity)) {
-                Log.d(MY_TAG, "city is already used: " + userCity);
                 return CheckCityStatus.ALREADY_USED_CITY;
             } else {
-                Log.d(MY_TAG, "database doesn't know this city: " + userCity);
                 return CheckCityStatus.UNKNOWN_CITY;
             }
         }
