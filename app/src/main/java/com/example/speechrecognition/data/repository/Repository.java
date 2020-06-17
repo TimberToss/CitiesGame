@@ -9,7 +9,6 @@ import com.example.speechrecognition.viewmodel.ServerCitiesCallback;
 import com.example.speechrecognition.viewmodel.ServerLettersCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
 
@@ -42,7 +41,7 @@ public class Repository {
                 .addOnCompleteListener(task -> {
                     if (task.getResult() != null && !task.getResult().isEmpty()) {
                         if (task.isSuccessful()) {
-                            Log.d(MY_TAG, "cities cache task is successful!!!!");
+                            Log.d(MY_TAG, "cities cache task is successful!!!");
                             citiesCallback.downloadCities(
                                     new Resource.Success<>(
                                             task.getResult().toObjects(City.class)
@@ -68,9 +67,10 @@ public class Repository {
                 .get(Source.CACHE)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        Log.d(MY_TAG, "begin letters cache task is successful!!!!");
+                        Log.d(MY_TAG, "begin letters cache task is successful!!!");
                         lettersCallback.downloadLetters(
-                                new Resource.Success<>(task.getResult().toObject(BeginLetters.class))
+                                new Resource.Success<>(Objects.requireNonNull(task.getResult())
+                                        .toObject(BeginLetters.class))
                         );
                     } else {
                         runLettersServerQuery(db);
@@ -85,19 +85,20 @@ public class Repository {
                 .limit(1)
                 .whereEqualTo(CITY_NAME_FIELD, userCityName)
                 .get(Source.CACHE);
-        while (!task.isComplete()) { }
-        return !task.getResult().isEmpty();
+        while (!task.isComplete()) {
+        }
+        return !Objects.requireNonNull(task.getResult()).isEmpty();
     }
 
     private void runCitiesServerQuery(FirebaseFirestore db) {
         db.collection(COLLECTION_CITIES)
                 .get(Source.SERVER)
                 .addOnSuccessListener(result -> {
-                    Log.d(MY_TAG, "cities server task is successful!!!!");
+                    Log.d(MY_TAG, "cities server task is successful!!!");
                     citiesCallback.downloadCities(new Resource.Success<>(result.toObjects(City.class)));
                 })
                 .addOnFailureListener(error -> {
-                    Log.d(MY_TAG, "cities server task is error!!!!");
+                    Log.d(MY_TAG, "cities server task is error!!!");
                     citiesCallback.downloadCities(new Resource.Error<>(error.getMessage()));
                 });
     }
@@ -107,13 +108,13 @@ public class Repository {
                 .document(DOCUMENT_BEGIN_LETTERS_LANGUAGE)
                 .get(Source.SERVER)
                 .addOnSuccessListener(result -> {
-                    Log.d(MY_TAG, "begin letters server task is successful!!!!");
+                    Log.d(MY_TAG, "begin letters server task is successful!!!");
                     lettersCallback.downloadLetters(
                             new Resource.Success<>(result.toObject(BeginLetters.class))
                     );
                 })
                 .addOnFailureListener(error -> {
-                    Log.d(MY_TAG, "begin letters server task is error!!!!");
+                    Log.d(MY_TAG, "begin letters server task is error!!!");
                     lettersCallback.downloadLetters(new Resource.Error<>(error.getMessage()));
                 });
     }

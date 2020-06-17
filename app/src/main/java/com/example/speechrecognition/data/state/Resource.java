@@ -1,7 +1,7 @@
 package com.example.speechrecognition.data.state;
 
 
-public class Resource <T> {
+public class Resource<T> {
     private DataStatus status;
     private T data;
     private String message;
@@ -29,13 +29,15 @@ public class Resource <T> {
             super(data, null, DataStatus.SUCCESS);
         }
     }
-    public static final class Loading<T> extends Resource<T>  {
+
+    public static final class Loading<T> extends Resource<T> {
 
         public Loading() {
             super(null, null, DataStatus.LOADING);
         }
     }
-    public static final class Error<T> extends Resource<T>  {
+
+    public static final class Error<T> extends Resource<T> {
 
         public Error(String message) {
             super(null, message, DataStatus.ERROR);
